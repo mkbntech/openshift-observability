@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenShift 4.20 Distributed Observability Demo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen antialiased flex flex-col">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-red-600 flex items-center justify-center font-bold text-white shadow-lg shadow-red-600/30">
+          <i class="fa-solid fa-cloud"></i>
+        </div>
+        <div>
+          <h1 class="text-base font-bold tracking-tight text-white flex items-center gap-2">
+            Red Hat OpenShift Local <span class="text-xs font-mono font-medium px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30">4.20.x</span>
+          </h1>
+          <p class="text-xs text-slate-400">Enterprise Distributed Tracing & Observability Lab</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <a id="jaegerTopLink" href="<%= jaegerUiUrl %>" target="_blank" rel="noopener noreferrer"
+           class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/30 transition">
+          <i class="fa-solid fa-diagram-project"></i> Tempo / Jaeger UI
+          <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+        </a>
+        <span class="inline-flex items-center gap-1.5 text-xs text-emerald-400 font-mono px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> CRC Cluster Active
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full space-y-6">
+
+    <!-- Architecture Breadcrumb Bar -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm">
+      <p class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+        <i class="fa-solid fa-route text-slate-400"></i> Distributed Execution Chain (W3C Trace Context Propagation)
+      </p>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <!-- Node.js Frontend -->
+        <div class="bg-slate-950 border border-emerald-500/40 rounded-lg p-3 relative overflow-hidden">
+          <div class="flex items-center justify-between text-xs font-mono text-emerald-400 font-semibold mb-1">
+            <span>1. Frontend</span>
+            <span class="text-[10px] bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/30">Node.js 20</span>
+          </div>
+          <p class="text-xs text-slate-300 font-mono">Express Gateway</p>
+          <p class="text-[11px] text-slate-500 mt-1">SLA: 3,000ms timeout</p>
+        </div>
+
+        <!-- Java Order Service -->
+        <div class="bg-slate-950 border border-amber-500/40 rounded-lg p-3 relative overflow-hidden">
+          <div class="flex items-center justify-between text-xs font-mono text-amber-400 font-semibold mb-1">
+            <span>2. Order Service</span>
+            <span class="text-[10px] bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">Java 21</span>
+          </div>
+          <p class="text-xs text-slate-300 font-mono">Spring Boot 3 + H2</p>
+          <p class="text-[11px] text-slate-500 mt-1">Auto-instrumented agent</p>
+        </div>
+
+        <!-- Python Inventory Service -->
+        <div class="bg-slate-950 border border-blue-500/40 rounded-lg p-3 relative overflow-hidden">
+          <div class="flex items-center justify-between text-xs font-mono text-blue-400 font-semibold mb-1">
+            <span>3. Inventory</span>
+            <span class="text-[10px] bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/30">Python 3.12</span>
+          </div>
+          <p class="text-xs text-slate-300 font-mono">FastAPI + Async HTTP</p>
+          <p class="text-[11px] text-slate-500 mt-1">Auto-instrumented agent</p>
+        </div>
+
+        <!-- Go Ingestion Worker -->
+        <div class="bg-slate-950 border border-cyan-500/40 rounded-lg p-3 relative overflow-hidden">
+          <div class="flex items-center justify-between text-xs font-mono text-cyan-400 font-semibold mb-1">
+            <span>4. Ingestion Worker</span>
+            <span class="text-[10px] bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/30">Go 1.22</span>
+          </div>
+          <p class="text-xs text-slate-300 font-mono">Manual OTel SDK</p>
+          <p class="text-[11px] text-slate-500 mt-1">Chaos latency target (4s)</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Interactive Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      <!-- Left Panel: Trigger Form -->
+      <div class="lg:col-span-5 space-y-6">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm">
+          <h2 class="text-sm font-bold uppercase tracking-wider text-slate-300 mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-cart-shopping text-red-500"></i> Dispatch Enterprise Transaction
+          </h2>
+
+          <form id="orderForm" class="space-y-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Target Item</label>
+              <input type="text" id="itemInput" value="OpenShift 4.20 Compute Node Subscription"
+                     class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-red-500">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Quantity</label>
+                <input type="number" id="qtyInput" value="2" min="1" max="100"
+                       class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-red-500">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Unit Price ($USD)</label>
+                <input type="number" id="priceInput" value="1250.00" step="50"
+                       class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-red-500">
+              </div>
+            </div>
+
+            <!-- Chaos / Bug Switch -->
+            <div class="p-3.5 rounded-lg bg-red-950/30 border border-red-800/40 space-y-2">
+              <div class="flex items-center justify-between">
+                <label for="chaosToggle" class="text-xs font-bold text-red-300 flex items-center gap-2 cursor-pointer">
+                  <i class="fa-solid fa-bug text-red-400"></i> Inject 4-Second Latency Bug
+                </label>
+                <input type="checkbox" id="chaosToggle"
+                       class="w-4 h-4 text-red-600 bg-slate-900 border-slate-700 rounded focus:ring-red-500 cursor-pointer">
+              </div>
+              <p class="text-[11px] text-slate-400">
+                Simulates an artificial 4,000ms delay inside the Go worker. This intentionally triggers a <strong>504 Gateway Timeout</strong> in the Node.js frontend SLA filter (3,000ms).
+              </p>
+            </div>
+
+            <button type="submit" id="submitBtn"
+                    class="w-full py-2.5 px-4 rounded-lg bg-red-600 hover:bg-red-500 active:bg-red-700 font-semibold text-sm text-white shadow-md shadow-red-600/30 transition flex items-center justify-center gap-2">
+              <span id="btnText"><i class="fa-solid fa-paper-plane"></i> Execute Polyglot Transaction</span>
+              <span id="btnSpinner" class="hidden"><i class="fa-solid fa-circle-notch animate-spin"></i> Tracing In-Flight...</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Diagnostic Guide Card -->
+        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-5 text-xs text-slate-400 space-y-2">
+          <p class="font-semibold text-slate-300 flex items-center gap-2">
+            <i class="fa-solid fa-lightbulb text-amber-400"></i> YouTube Diagnostic Trail:
+          </p>
+          <ol class="list-decimal list-inside space-y-1.5 text-slate-400">
+            <li><strong>Metrics First:</strong> View Prometheus spike in OpenShift Console (Observe &gt; Metrics).</li>
+            <li><strong>Correlate Trace:</strong> Copy the Trace ID below and query Grafana Tempo / Jaeger.</li>
+            <li><strong>Root Cause Waterfall:</strong> See the exact Go worker span stalled for 4,000ms!</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- Right Panel: Live Response & Observability Inspector -->
+      <div class="lg:col-span-7 space-y-6">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm min-h-[460px] flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+              <h2 class="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                <i class="fa-solid fa-satellite-dish text-indigo-400"></i> Live Telemetry Result
+              </h2>
+              <div id="statusBadge" class="hidden text-xs font-mono font-bold px-2.5 py-1 rounded-full">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="py-16 text-center space-y-3">
+              <div class="w-12 h-12 mx-auto rounded-full bg-slate-800 flex items-center justify-center text-slate-400">
+                <i class="fa-solid fa-microchip text-xl"></i>
+              </div>
+              <p class="text-sm text-slate-300 font-medium">No transaction dispatched yet</p>
+              <p class="text-xs text-slate-500 max-w-sm mx-auto">Click "Execute Polyglot Transaction" to trace requests across Node.js, Spring Boot, FastAPI, and Go.</p>
+            </div>
+
+            <!-- Result Display -->
+            <div id="resultContent" class="hidden mt-4 space-y-4">
+              <!-- Stats Row -->
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div class="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                  <span class="text-[10px] uppercase font-bold text-slate-500">Round-Trip Latency</span>
+                  <p id="latencyDisplay" class="text-lg font-mono font-bold text-white">0 ms</p>
+                </div>
+                <div class="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                  <span class="text-[10px] uppercase font-bold text-slate-500">HTTP Status</span>
+                  <p id="httpCodeDisplay" class="text-lg font-mono font-bold text-white">---</p>
+                </div>
+                <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 col-span-2 sm:col-span-1">
+                  <span class="text-[10px] uppercase font-bold text-slate-500">SLA Margin</span>
+                  <p id="slaDisplay" class="text-lg font-mono font-bold text-emerald-400">PASS</p>
+                </div>
+              </div>
+
+              <!-- Trace ID Banner -->
+              <div class="p-3.5 bg-slate-950 border border-slate-800 rounded-lg space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-mono text-indigo-400 font-semibold flex items-center gap-1.5">
+                    <i class="fa-solid fa-fingerprint"></i> OpenTelemetry Trace ID
+                  </span>
+                  <button id="copyTraceBtn" class="text-xs text-slate-400 hover:text-white transition flex items-center gap-1">
+                    <i class="fa-regular fa-copy"></i> Copy
+                  </button>
+                </div>
+                <div class="font-mono text-xs text-slate-200 bg-slate-900 px-3 py-2 rounded border border-slate-800 truncate" id="traceIdDisplay">
+                  --
+                </div>
+                <div class="pt-1">
+                  <a id="jaegerTraceLink" href="#" target="_blank" rel="noopener noreferrer"
+                     class="w-full inline-flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 font-semibold text-xs text-white shadow-sm transition">
+                    <i class="fa-solid fa-water-ladder"></i> Open Waterfall Trace in Tempo / Jaeger
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                  </a>
+                </div>
+              </div>
+
+              <!-- Raw JSON Output -->
+              <div>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Response Payload</span>
+                <pre id="jsonPayload" class="mt-1 bg-slate-950 text-slate-300 font-mono text-xs p-3.5 rounded-lg border border-slate-800 overflow-x-auto max-h-48 scrollbar-thin"></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-slate-800 text-[11px] text-slate-500 flex items-center justify-between">
+            <span>OpenTelemetry Collector: <code class="text-slate-400">otel-collector.tracing.svc:4318</code></span>
+            <span>Storage: <code class="text-slate-400">MinIO (S3)</code></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const form = document.getElementById('orderForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const btnText = document.getElementById('btnText');
+    const btnSpinner = document.getElementById('btnSpinner');
+    const emptyState = document.getElementById('emptyState');
+    const resultContent = document.getElementById('resultContent');
+    const statusBadge = document.getElementById('statusBadge');
+    const latencyDisplay = document.getElementById('latencyDisplay');
+    const httpCodeDisplay = document.getElementById('httpCodeDisplay');
+    const slaDisplay = document.getElementById('slaDisplay');
+    const traceIdDisplay = document.getElementById('traceIdDisplay');
+    const jaegerTraceLink = document.getElementById('jaegerTraceLink');
+    const jsonPayload = document.getElementById('jsonPayload');
+    const copyTraceBtn = document.getElementById('copyTraceBtn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      // UI Loading state
+      btnText.classList.add('hidden');
+      btnSpinner.classList.remove('hidden');
+      submitBtn.disabled = true;
+
+      const payload = {
+        item: document.getElementById('itemInput').value,
+        quantity: document.getElementById('qtyInput').value,
+        price: document.getElementById('priceInput').value,
+        simulateLatency: document.getElementById('chaosToggle').checked
+      };
+
+      try {
+        const response = await fetch('/api/order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        renderResult(response.status, data);
+      } catch (err) {
+        renderResult(500, {
+          status: 'error',
+          statusCode: 500,
+          error: 'Client Network Error',
+          message: err.message,
+          elapsedMs: 0,
+          traceId: 'N/A'
+        });
+      } finally {
+        btnText.classList.remove('hidden');
+        btnSpinner.classList.add('hidden');
+        submitBtn.disabled = false;
+      }
+    });
+
+    function renderResult(httpStatus, data) {
+      emptyState.classList.add('hidden');
+      resultContent.classList.remove('hidden');
+
+      httpCodeDisplay.textContent = `HTTP ${httpStatus}`;
+      latencyDisplay.textContent = `${data.elapsedMs || 0} ms`;
+      traceIdDisplay.textContent = data.traceId || 'unknown';
+      jsonPayload.textContent = JSON.stringify(data, null, 2);
+
+      const jaegerUrl = data.jaegerTraceUrl || `<%= jaegerUiUrl %>/trace/${data.traceId}`;
+      jaegerTraceLink.href = jaegerUrl;
+
+      statusBadge.classList.remove('hidden', 'bg-emerald-500/10', 'text-emerald-400', 'border-emerald-500/30', 'bg-red-500/10', 'text-red-400', 'border-red-500/30');
+
+      if (httpStatus === 200) {
+        statusBadge.textContent = 'TRANSACTION CONFIRMED';
+        statusBadge.classList.add('bg-emerald-500/10', 'text-emerald-400', 'border', 'border-emerald-500/30');
+        slaDisplay.textContent = 'PASS';
+        slaDisplay.className = 'text-lg font-mono font-bold text-emerald-400';
+      } else {
+        statusBadge.textContent = httpStatus === 504 ? 'SLA TIMEOUT (504)' : `ERROR (${httpStatus})`;
+        statusBadge.classList.add('bg-red-500/10', 'text-red-400', 'border', 'border-red-500/30');
+        slaDisplay.textContent = 'BREACH';
+        slaDisplay.className = 'text-lg font-mono font-bold text-red-400 animate-pulse';
+      }
+    }
+
+    copyTraceBtn.addEventListener('click', () => {
+      const traceId = traceIdDisplay.textContent;
+      if (traceId && traceId !== '--') {
+        navigator.clipboard.writeText(traceId);
+        copyTraceBtn.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i> Copied!';
+        setTimeout(() => {
+          copyTraceBtn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy';
+        }, 2000);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+apiVersion: tempo.grafana.com/v1alpha1
+kind: TempoStack
+metadata:
+  name: tempo
+  namespace: tracing
+spec:
+  storageSize: 1Gi
+  storage:
+    secret:
+      name: tempo-s3-secret
+      type: s3
+  resources:
+    total:
+      limits:
+        memory: 2Gi
+        cpu: 2000m
+      requests:
+        memory: 512Mi
+        cpu: 200m
+  template:
+    queryFrontend:
+      jaegerQuery:
+        enabled: true
+        ingress:
+          type: route
+          route:
+            termination: edge

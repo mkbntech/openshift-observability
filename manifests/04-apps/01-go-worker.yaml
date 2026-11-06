@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-service
+  namespace: observability-demo
+  labels:
+    app: worker-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker-service
+  template:
+    metadata:
+      labels:
+        app: worker-service
+    spec:
+      containers:
+        - name: worker-service
+          image: image-registry.openshift-image-registry.svc:5000/observability-demo/worker-go:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8090
+              name: http
+          env:
+            - name: PORT
+              value: "8090"
+            - name: OTEL_SERVICE_NAME
+              value: "worker-go"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "otel-collector.tracing.svc:4317"
+            - name: ENABLE_LATENCY_BUG
+              value: "false"
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              cpu: 150m
+              memory: 96Mi
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8090
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8090
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker-service
+  namespace: observability-demo
+  labels:
+    app: worker-service
+spec:
+  ports:
+    - port: 8090
+      targetPort: 8090
+      name: http
+  selector:
+    app: worker-service

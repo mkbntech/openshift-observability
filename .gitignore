@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+target/
+*.class
+*.jar
+*.war
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# Go
+bin/
+worker-go
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+*.swp
