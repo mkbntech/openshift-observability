@@ -21,7 +21,7 @@ spec:
       containers:
         - name: inventory-service
           image: image-registry.openshift-image-registry.svc:5000/observability-demo/inventory-python:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8000
               name: http

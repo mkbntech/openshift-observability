@@ -148,4 +148,4 @@ Deploy User Workload Monitoring, MinIO, TempoStack, OpenTelemetry Collector, and
 
 ## Documentation Links
 * [Local Runbook (RUNBOOK.md)](RUNBOOK.md) - Detailed step-by-step CLI commands, operator health checks, and CRC resource tuning.
-* [YouTube Narration Script (YOUTUBE_SCRIPT.md)](YOUTUBE_SCRIPT.md) - Complete two-column spoken-word script formatted for video recording.
+

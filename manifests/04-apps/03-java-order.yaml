@@ -21,7 +21,7 @@ spec:
       containers:
         - name: order-service
           image: image-registry.openshift-image-registry.svc:5000/observability-demo/order-java:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
               name: http

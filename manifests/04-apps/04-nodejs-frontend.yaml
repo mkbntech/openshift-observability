@@ -21,7 +21,7 @@ spec:
       containers:
         - name: frontend
           image: image-registry.openshift-image-registry.svc:5000/observability-demo/frontend-node:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 3000
               name: http
@@ -35,7 +35,7 @@ spec:
             - name: OTEL_SERVICE_NAME
               value: "frontend-node"
             - name: JAEGER_UI_URL
-              value: "https://tempo-jaeger-query-tracing.apps-crc.testing"
+              value: "https://tempo-tempo-query-frontend-tracing.apps-crc.testing"
           resources:
             requests:
               cpu: 50m

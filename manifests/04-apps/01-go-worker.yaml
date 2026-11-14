@@ -18,7 +18,7 @@ spec:
       containers:
         - name: worker-service
           image: image-registry.openshift-image-registry.svc:5000/observability-demo/worker-go:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8090
               name: http

@@ -1,10 +1,10 @@
 # Multi-stage build for Node.js 20 Frontend
-FROM node:20-alpine AS builder
+FROM docker.io/library/node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm install --omit=dev
 
-FROM node:20-alpine
+FROM docker.io/library/node:20-alpine
 WORKDIR /app
 COPY --from=builder /app/node_modules ./node_modules
 COPY package*.json ./

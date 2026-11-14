@@ -71,7 +71,7 @@ echo " Observability Stack & Applications Deployed!"
 echo "=========================================================="
 
 FRONTEND_URL=$(oc get route frontend -n observability-demo -o jsonpath='{.spec.host}' 2>/dev/null || echo "frontend-observability-demo.apps-crc.testing")
-JAEGER_ROUTE=$(oc get route -n tracing -l app.kubernetes.io/name=jaeger -o jsonpath='{.items[0].spec.host}' 2>/dev/null || oc get route -n tracing -o jsonpath='{.items[0].spec.host}' 2>/dev/null || echo "tempo-jaeger-query-tracing.apps-crc.testing")
+JAEGER_ROUTE=$(oc get route -n tracing -l app.kubernetes.io/component=query-frontend -o jsonpath='{.items[0].spec.host}' 2>/dev/null || oc get route -n tracing -o jsonpath='{.items[0].spec.host}' 2>/dev/null || echo "tempo-tempo-query-frontend-tracing.apps-crc.testing")
 
 echo ""
 echo "Frontend Dashboard : https://${FRONTEND_URL}"

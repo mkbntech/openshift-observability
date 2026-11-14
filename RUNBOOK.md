@@ -37,7 +37,10 @@ crc config set disk-size 40
 # 4. Disable anonymous telemetry to reduce background overhead
 crc config set consent-telemetry no
 
-# 5. Verify the configuration
+# 5. Enable cluster monitoring operator (disabled by default in CRC)
+crc config set enable-cluster-monitoring true
+
+# 6. Verify the configuration
 crc config view
 ```
 
@@ -199,7 +202,7 @@ Retrieve the external OpenShift route URLs:
 echo "https://$(oc get route frontend -n observability-demo -o jsonpath='{.spec.host}')"
 
 # Jaeger / Tempo Query UI:
-echo "https://$(oc get route -n tracing -l app.kubernetes.io/name=jaeger -o jsonpath='{.items[0].spec.host}')"
+echo "https://$(oc get route -n tracing -l app.kubernetes.io/component=query-frontend -o jsonpath='{.items[0].spec.host}')"
 
 # OpenShift Web Console:
 echo "https://console-openshift-console.apps-crc.testing"

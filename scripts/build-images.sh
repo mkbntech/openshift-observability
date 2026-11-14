@@ -5,6 +5,8 @@ set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 NAMESPACE="observability-demo"
 
+command -v oc >/dev/null 2>&1 || eval "$(crc oc-env)"
+
 echo "=========================================================="
 echo " Building Polyglot Microservices for OpenShift 4.20"
 echo " Target Namespace: ${NAMESPACE}"
@@ -19,11 +21,13 @@ if [ "$MODE" = "podman" ]; then
   echo "Using local Podman to build and push images..."
 
   # Expose OpenShift internal registry route if not already exposed
-  oc patch configs.imageregistry.operator.openshift.io/cluster --patch '{"spec":{"defaultRoute":true}}' --type=merge || true
-  REGISTRY_HOST=$(oc get route default-route -n openshift-image-registry --template='{{ .spec.host }}')
+  oc patch configs.imageregistry.operator.openshift.io/cluster --patch '{"spec":{"defaultRoute":true}}' --type=merge >/dev/null 2>&1 || true
+  until REGISTRY_HOST=$(oc get route default-route -n openshift-image-registry -o jsonpath='{.spec.host}' 2>/dev/null) && [ -n "${REGISTRY_HOST}" ]; do
+    sleep 2
+  done
   
   echo "Authenticating Podman against OpenShift registry: ${REGISTRY_HOST}..."
-  podman login -u kubeadmin -p "$(oc whoami -t)" --tls-verify=false "${REGISTRY_HOST}"
+  podman login -u "$(oc whoami)" -p "$(oc whoami -t)" --tls-verify=false "${REGISTRY_HOST}"
 
   SERVICES=("frontend-node" "order-java" "inventory-python" "worker-go")
   for SVC in "${SERVICES[@]}"; do
@@ -42,15 +46,29 @@ else
 
   for SVC in "${SERVICES[@]}"; do
     echo ""
-    echo ">>> Setting up BuildConfig for [${SVC}]..."
-    
-    # Create ImageStream if it doesn't exist
-    oc get is "${SVC}" -n "${NAMESPACE}" >/dev/null 2>&1 || \
-      oc create imagestream "${SVC}" -n "${NAMESPACE}"
-
-    # Create Binary BuildConfig if it doesn't exist
-    oc get bc "${SVC}" -n "${NAMESPACE}" >/dev/null 2>&1 || \
-      oc new-build --binary --name="${SVC}" --image-stream="${SVC}:latest" -n "${NAMESPACE}"
+    echo ">>> Setting up ImageStream and BuildConfig for [${SVC}]..."
+    oc apply -n "${NAMESPACE}" -f - <<EOF
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: ${SVC}
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: ${SVC}
+spec:
+  source:
+    type: Binary
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Containerfile
+  output:
+    to:
+      kind: ImageStreamTag
+      name: ${SVC}:latest
+EOF
 
     echo ">>> Starting build for [${SVC}] from local source..."
     oc start-build "${SVC}" --from-dir="${PROJECT_ROOT}/services/${SVC}" -n "${NAMESPACE}" --follow
