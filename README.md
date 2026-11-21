@@ -59,8 +59,6 @@ flowchart LR
 ```text
 openshift-observability/
 ├── README.md                               # Project documentation & architecture
-├── RUNBOOK.md                              # Comprehensive local runbook for OpenShift Local
-├── YOUTUBE_SCRIPT.md                       # Two-column spoken narration script for recording
 ├── scripts/
 │   ├── setup-crc.sh                        # CRC memory (16GB), CPU (6), and disk setup
 │   ├── deploy-all.sh                       # One-click deployment script
